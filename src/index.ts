@@ -66,16 +66,16 @@ const submitNostrStorage = async (): Promise<null> => {
   const ev_now = await upsertTableOrCreate(
     [RELAY_URL],
     HEX,
-    `frowmeter_${RELAY_NAME}`,
-    `frowmeter_${RELAY_NAME}`,
+    `flowmeter_${RELAY_NAME}`,
+    `flowmeter_${RELAY_NAME}`,
     [],
     [postData]
   );
   const ev_date = await upsertTableOrCreate(
     [RELAY_URL],
     HEX,
-    `frowmeter_${RELAY_NAME}_${formattedDate}`,
-    `frowmeter_${RELAY_NAME}_${formattedDate}`,
+    `flowmeter_${RELAY_NAME}_${formattedDate}`,
+    `flowmeter_${RELAY_NAME}_${formattedDate}`,
     [],
     [postData]
   );
