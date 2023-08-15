@@ -8,16 +8,16 @@
 
 ### 連続集計
 
-テーブル名: `frowmeter_[relay_key]`
+テーブル名: `flowmeter_[relay_key]`
 
 ```json
 {
   "kind": 30078,
   "content": "test",
   "tags": [
-    [ "d", "frowmeter_shino3" ],
-    [ "title", "frowmeter_shino3" ],
-    [ "t", "frowmeter_shino3" ],
+    [ "d", "flowmeter_shino3" ],
+    [ "title", "flowmeter_shino3" ],
+    [ "t", "flowmeter_shino3" ],
     [ "202308151013", "0" ],
     [ "202308151014", "0" ],
     [ "202308151015", "0" ],
@@ -29,16 +29,16 @@
 
 ### 日別集計
 
-テーブル名: `frowmeter_[relay_key]_[date]`
+テーブル名: `flowmeter_[relay_key]_[date]`
 
 ```json
 {
   "kind": 30078,
   "content": "test",
   "tags": [
-    [ "d", "frowmeter_shino3_20230815" ],
-    [ "title", "frowmeter_shino3_20230815" ],
-    [ "t", "frowmeter_shino3_20230815" ],
+    [ "d", "flowmeter_shino3_20230815" ],
+    [ "title", "flowmeter_shino3_20230815" ],
+    [ "t", "flowmeter_shino3_20230815" ],
     [ "202308151013", "0" ],
     [ "202308151014", "0" ],
     [ "202308151015", "0" ],
@@ -70,7 +70,7 @@ npm run build
 
 ```bash
 cd ./nostr-flowmeter-batch-on-server
-git ぷっｌ
+git pull
 npm install
 
 # build
