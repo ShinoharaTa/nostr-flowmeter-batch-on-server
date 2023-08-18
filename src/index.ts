@@ -4,6 +4,7 @@ import { format, startOfMinute, subMinutes, getUnixTime } from "date-fns";
 import { finishEvent, relayInit } from "nostr-tools";
 import "websocket-polyfill";
 import { upsertTableOrCreate } from "nostr-key-value";
+import { eventKind, NostrFetcher } from "nostr-fetch";
 
 dotenv.config();
 
@@ -22,8 +23,7 @@ const post = async (ev: any) => {
       console.error("failed to send event", ev);
       resolve("ok");
     });
-    pub.on("ok", (ev) => {
-      console.log(ev);
+    pub.on("ok", () => {
       resolve("ok");
     });
   });
@@ -40,24 +40,16 @@ const submitNostrStorage = async (): Promise<null> => {
   }
   const count = await (async () => {
     try {
-      let count = 0;
-      const sub = relay.sub([
-        { kinds: [1], since: getUnixTime(from), until: getUnixTime(to), limit: 1000 },
-      ]);
-      sub.on("event", (ev) => {
-        count++;
-      });
-      return new Promise((resolve) => {
-        sub.on("eose", () => {
-          resolve(count);
-        });
-        relay.on("error", () => {
-          resolve(NaN);
-        });
-      });
+      const fetcher = NostrFetcher.init();
+      const allPosts = await fetcher.fetchAllEvents(
+        [RELAY_URL],
+        { kinds: [eventKind.text] },
+        { since: getUnixTime(from), until: getUnixTime(to) },
+        { sort: true }
+      );
+      return allPosts ? allPosts.length : NaN;
     } catch (error) {
-      console.error(to, error);
-      return Promise.resolve(NaN);
+      return NaN;
     }
   })();
   const formattedNow = format(from, "yyyyMMddHHmm");
@@ -71,6 +63,9 @@ const submitNostrStorage = async (): Promise<null> => {
     [],
     [postData]
   );
+  const table_info = ev_now.tags.slice(0, 3);
+  const table_data = ev_now.tags.slice(3).slice(-1440);
+  ev_now.tags = [...table_info, ...table_data];
   const ev_date = await upsertTableOrCreate(
     [RELAY_URL],
     HEX,
@@ -81,9 +76,9 @@ const submitNostrStorage = async (): Promise<null> => {
   );
   console.log(ev_now);
   console.log(ev_date);
+  await post(ev_now);
+  await post(ev_date);
   if (!MODE_DEV) {
-    await post(ev_now);
-    await post(ev_date);
   }
   relay.close();
   return;
@@ -91,13 +86,13 @@ const submitNostrStorage = async (): Promise<null> => {
 
 // テスト処理実行
 if (MODE_DEV) {
-  submitNostrStorage();
+  // submitNostrStorage();
 } else {
 }
 
 // Schedule Batch
 cron.schedule("* * * * *", async () => {
-  if (MODE_DEV) return;
+  // if (MODE_DEV) return;
   submitNostrStorage();
 });
 
