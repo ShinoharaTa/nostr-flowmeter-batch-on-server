@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import cron from "node-cron";
 import { format, startOfMinute, subMinutes, getUnixTime } from "date-fns";
-import { finishEvent, relayInit } from "nostr-tools";
+import { getPublicKey, finishEvent, relayInit } from "nostr-tools";
 import "websocket-polyfill";
 import { upsertTableOrCreate } from "nostr-key-value";
 import { eventKind, NostrFetcher } from "nostr-fetch";
@@ -19,8 +19,8 @@ const post = async (ev: any) => {
   const post = finishEvent(ev, HEX);
   return new Promise((resolve) => {
     const pub = relay.publish(post);
-    pub.on("failed", (ev) => {
-      console.error("failed to send event", ev);
+    pub.on("failed", () => {
+      console.error("failed to send event");
       resolve("ok");
     });
     pub.on("ok", () => {
@@ -47,6 +47,7 @@ const submitNostrStorage = async (): Promise<null> => {
         { since: getUnixTime(from), until: getUnixTime(to) },
         { sort: true }
       );
+      fetcher.shutdown();
       return allPosts ? allPosts.length : NaN;
     } catch (error) {
       return NaN;
@@ -57,7 +58,7 @@ const submitNostrStorage = async (): Promise<null> => {
   const postData = [formattedNow, count.toString()];
   const ev_now = await upsertTableOrCreate(
     [RELAY_URL],
-    HEX,
+    getPublicKey(HEX),
     `flowmeter_${RELAY_NAME}`,
     `flowmeter_${RELAY_NAME}`,
     [],
@@ -68,17 +69,15 @@ const submitNostrStorage = async (): Promise<null> => {
   ev_now.tags = [...table_info, ...table_data];
   const ev_date = await upsertTableOrCreate(
     [RELAY_URL],
-    HEX,
+    getPublicKey(HEX),
     `flowmeter_${RELAY_NAME}_${formattedDate}`,
     `flowmeter_${RELAY_NAME}_${formattedDate}`,
     [],
     [postData]
   );
-  console.log(ev_now);
-  console.log(ev_date);
-  await post(ev_now);
-  await post(ev_date);
   if (!MODE_DEV) {
+    await post(ev_now);
+    await post(ev_date);
   }
   relay.close();
   return;
@@ -92,7 +91,7 @@ if (MODE_DEV) {
 
 // Schedule Batch
 cron.schedule("* * * * *", async () => {
-  // if (MODE_DEV) return;
+  if (MODE_DEV) return;
   submitNostrStorage();
 });
 
