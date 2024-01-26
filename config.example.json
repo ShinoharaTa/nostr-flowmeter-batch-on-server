@@ -1,0 +1,6 @@
+{
+    "nsec": "your_bot_nsec",
+    "relay_name": "your_relay_name",
+    "relay_url": "wss://your.relay.addr",
+    "custom_db_name": "(optional_custom_db_name): not use to empty."
+}
