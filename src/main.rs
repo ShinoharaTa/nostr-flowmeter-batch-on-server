@@ -21,7 +21,7 @@ fn load_config(file_path: &str) -> Result<Config> {
     Ok(config)
 }
 
-async fn count(client: &Client) -> Result<()> {
+async fn count(client: &Client) -> Result<Number> {
     let now = Utc::now();
     let until = now.with_second(0).with_context(|| format!("失敗"))?;
     let minutes = Duration::from_secs(60);
@@ -29,16 +29,14 @@ async fn count(client: &Client) -> Result<()> {
     let filters = Filter::new()
         .kind(Kind::TextNote)
         .since(Timestamp::from(since.timestamp() as u64))
-        .until(Timestamp::from(until.timestamp() as u64));
-    // .limit(10);
+        .until(Timestamp::from(until.timestamp() as u64))
+        .limit(10000);
     let events = client
         .get_events_of(vec![filters], Some(Duration::from_secs(20)))
         .await
         .with_context(|| format!("イベントの取得に失敗しました。"))?;
     println!("events: {:?}", events.len());
-    // for event in &events {
-    // }
-    Ok(())
+    Ok(Number::from(events.len()))
 }
 
 #[tokio::main]
