@@ -47,16 +47,16 @@ async fn get_app_specific_data(
     let filters = Filter::new()
         .author(keys.public_key())
         .kind(Kind::ApplicationSpecificData)
-        // .custom_tag(Alphabet::D, table_name)
+        .custom_tag(Alphabet::D, [table_name])
         .limit(10);
     let events = client
         .get_events_of(vec![filters], Some(Duration::from_secs(20)))
         .await
         .with_context(|| format!("イベントの取得に失敗しました。"))?;
-    if let Some(event) = events.get(1) {
-        Ok(Some(event.clone()))
+    if let Some(event) = events.get(0) {
+        return Ok(Some(event.clone()));
     } else {
-        Ok(None)
+        return Ok(None);
     }
 }
 
@@ -68,16 +68,21 @@ async fn main() -> Result<()> {
     client.add_relay(config.relay_url).await?;
     // .with_context(|| format!("リレーの接続に失敗しました: {}", config.relay_url))?;
     client.connect().await;
-    let keys = Keys::from_sk_str(&config.nsec)?;
-    // .with_context(|| format!("次のキーは正常に使用できませんでした: {}", key))?;
+    let keys = Keys::from_sk_str(&config.nsec)
+        .with_context(|| format!("次のキーは正常に使用できませんでした: {}", config.nsec))?;
 
     // 集計処理実施
     let count = count(&client).await?;
-    // if let event = get_app_specific_data(&client, &keys, config.custom_db_name) {
-    //     // On Event,
-    // } else {
-    //     // None,
-    // }
+    match get_app_specific_data(&client, &keys, config.custom_db_name).await {
+        Ok(Some(event)) => {
+            // event あり
+            println!("{:?}", event);
+        }
+        Ok(None) => {
+            // event なし
+            println!("イベントなし");
+        }
+    }
 
     Ok(())
 }
