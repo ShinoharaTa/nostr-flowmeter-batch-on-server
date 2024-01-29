@@ -73,15 +73,20 @@ async fn main() -> Result<()> {
 
     // 集計処理実施
     let count = count(&client).await?;
-    match get_app_specific_data(&client, &keys, config.custom_db_name).await {
-        Ok(Some(event)) => {
-            // event あり
-            println!("{:?}", event);
-        }
-        Ok(None) => {
-            // event なし
-            println!("イベントなし");
-        }
+    // match get_app_specific_data(&client, &keys, config.custom_db_name).await {
+    //     Ok(Some(event)) => {
+    //         // event あり
+    //         println!("{:?}", event);
+    //     }
+    //     Ok(None) => {
+    //         // event なし
+    //         println!("イベントなし");
+    //     }
+    // }
+    if let Some(event) = get_app_specific_data(&client, &keys, config.custom_db_name).await? {
+        println!("event = {:?}", event);
+    } else {
+        println!("none??")
     }
 
     Ok(())
