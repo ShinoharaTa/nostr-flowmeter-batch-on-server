@@ -1,5 +1,6 @@
-use anyhow::{Context, Ok, Result};
+use anyhow::{Context, Result};
 use chrono::{Timelike, Utc};
+use core::result::Result::Ok;
 use nostr_sdk::{prelude::*, Timestamp};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -73,21 +74,34 @@ async fn main() -> Result<()> {
 
     // 集計処理実施
     let count = count(&client).await?;
-    // match get_app_specific_data(&client, &keys, config.custom_db_name).await {
-    //     Ok(Some(event)) => {
-    //         // event あり
-    //         println!("{:?}", event);
-    //     }
-    //     Ok(None) => {
-    //         // event なし
-    //         println!("イベントなし");
-    //     }
-    // }
-    if let Some(event) = get_app_specific_data(&client, &keys, config.custom_db_name).await? {
+    let db_tag = Tag::Generic(TagKind::D, vec![config.custom_db_name.clone()]);
+    let content: String;
+    if let Some(event) =
+        get_app_specific_data(&client, &keys, config.custom_db_name.clone()).await?
+    {
+        let get_content = event.content.clone();
+        let parsed_content = serde_json::from_str(&get_content);
+        let chart = match parsed_content {
+            Ok(Value::Array(arr)) => {
+                let mut arr = arr;
+                arr.push(json!(count));
+                if arr.len() > 10 {
+                    arr.drain(0..=arr.len() - 10);
+                }
+                arr
+            }
+            _ => vec![json!(count)],
+        };
+        content = serde_json::to_string(&chart)?;
         println!("event = {:?}", event);
     } else {
-        println!("none??")
+        content = String::from("[]");
+        println!("event none");
     }
+    let new_event =
+        EventBuilder::new(Kind::ApplicationSpecificData, content, [db_tag]).to_event(&keys)?;
+    println!("{:?}", new_event);
+    let _result = client.send_event(new_event).await?;
 
     Ok(())
 }
