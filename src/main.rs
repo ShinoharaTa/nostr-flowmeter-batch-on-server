@@ -67,7 +67,6 @@ async fn main() -> Result<()> {
     let config = load_config(config_path)?;
     let client = Client::default();
     client.add_relay(config.relay_url).await?;
-    // .with_context(|| format!("リレーの接続に失敗しました: {}", config.relay_url))?;
     client.connect().await;
     let keys = Keys::from_sk_str(&config.nsec)
         .with_context(|| format!("次のキーは正常に使用できませんでした: {}", config.nsec))?;
@@ -85,8 +84,8 @@ async fn main() -> Result<()> {
             Ok(Value::Array(arr)) => {
                 let mut arr = arr;
                 arr.push(json!(count));
-                if arr.len() > 10 {
-                    arr.drain(0..=arr.len() - 10);
+                if arr.len() > 1440 {
+                    arr.drain(0..=arr.len() - 1440);
                 }
                 arr
             }
