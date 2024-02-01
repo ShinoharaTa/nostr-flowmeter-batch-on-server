@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::time::Duration;
 
+const MAX_LENGTH: usize = 1440;
+
 #[derive(Serialize, Deserialize)]
 struct Config {
     nsec: String,
@@ -84,8 +86,8 @@ async fn main() -> Result<()> {
             Ok(Value::Array(arr)) => {
                 let mut arr = arr;
                 arr.push(json!(count));
-                if arr.len() > 1440 {
-                    arr.drain(0..=arr.len() - 1440);
+                if arr.len() > MAX_LENGTH {
+                    arr.drain(0..(arr.len() - MAX_LENGTH));
                 }
                 arr
             }
