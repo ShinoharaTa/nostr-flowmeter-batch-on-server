@@ -1,28 +1,12 @@
+mod util;
+
 use anyhow::{Context, Result};
 use chrono::{Timelike, Utc};
 use core::result::Result::Ok;
 use nostr_sdk::{prelude::*, Timestamp};
-use serde::{Deserialize, Serialize};
-use std::fs;
 use std::time::Duration;
 
 const MAX_LENGTH: usize = 1440;
-
-#[derive(Serialize, Deserialize)]
-struct Config {
-    nsec: String,
-    relay_name: String,
-    relay_url: String,
-    custom_db_name: String,
-}
-
-fn load_config(file_path: &str) -> Result<Config> {
-    let file_content = fs::read_to_string(file_path)
-        .with_context(|| format!("設定ファイル {} の読み込みに失敗しました", file_path))?;
-    let config: Config = serde_json::from_str(&file_content)
-        .with_context(|| format!("設定ファイル {} の展開に失敗しました", file_path))?;
-    Ok(config)
-}
 
 async fn count(client: &Client) -> Result<Number> {
     let now = Utc::now();
@@ -66,7 +50,7 @@ async fn get_app_specific_data(
 #[tokio::main]
 async fn main() -> Result<()> {
     let config_path = "./config.json";
-    let config = load_config(config_path)?;
+    let config = util::config::load(config_path)?;
     let client = Client::default();
     client.add_relay(config.relay_url).await?;
     client.connect().await;
