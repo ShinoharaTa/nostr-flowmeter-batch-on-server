@@ -1,8 +1,11 @@
 mod util;
 
+extern crate job_scheduler;
+
 use anyhow::{Context, Result};
 use chrono::{Timelike, Utc};
 use core::result::Result::Ok;
+use job_scheduler::{Job, JobScheduler};
 use nostr_sdk::{prelude::*, Timestamp};
 use std::time::Duration;
 
@@ -57,6 +60,8 @@ async fn main() -> Result<()> {
     let keys = Keys::from_sk_str(&config.nsec)
         .with_context(|| format!("次のキーは正常に使用できませんでした: {}", config.nsec))?;
 
+    let mut sched = JobScheduler::new();
+
     // 集計処理実施
     let count = count(&client).await?;
     let db_tag = Tag::Generic(TagKind::D, vec![config.custom_db_name.clone()]);
@@ -87,6 +92,22 @@ async fn main() -> Result<()> {
         EventBuilder::new(Kind::ApplicationSpecificData, content, [db_tag]).to_event(&keys)?;
     println!("{:?}", new_event);
     let _result = client.send_event(new_event).await?;
+
+    match "0 * * * * *".parse() {
+        Ok(cron) => {
+            sched.add(Job::new(cron, || {
+                println!("1 min!");
+            }));
+        }
+        Err(e) => {
+            eprintln!("failed: {}", e);
+        }
+    }
+
+    loop {
+        sched.tick();
+        std::thread::sleep(Duration::from_millis(500));
+    }
 
     Ok(())
 }
